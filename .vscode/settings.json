@@ -1,0 +1,8 @@
+{
+    "editor.cursorBlinking": "solid",
+    "editor.fontLigatures": true,
+
+    "editor.fontFamily": "fira-code-nerd, FiraCode Nerd Font, Consolas, 'Courier New', monospace",
+    // Corrija o erro JSONC 514 removendo vírgulas extras no final dos objetos ou arrays.    
+
+}
