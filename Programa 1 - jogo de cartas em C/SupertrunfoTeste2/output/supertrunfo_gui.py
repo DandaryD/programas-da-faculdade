@@ -1,11 +1,10 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog
-from tkinter import ttk
+from tkinter import messagebox, simpledialog, ttk
 import os
 
 ARQUIVO = "supertrunfoteste2.txt"
 
-# Dicionário com descrições das bandeiras
+# Dicionário com descrições das bandeiras dos estados brasileiros
 BANDEIRAS_ESTADOS = {
     "AC": "Bandeira do Acre - fundo verde com estrela amarela e faixa diagonal",
     "AL": "Bandeira de Alagoas - fundo branco com brasão central",
@@ -83,53 +82,49 @@ def exibir_detalhes():
     
     c = cidades[item_index]
     estado_sigla = c[0]
+    nome_cidade = c[2]
     
     detalhes = (
         f"Estado: {estado_sigla}\n"
         f"Código IBGE: {c[1]}\n"
-        f"Nome: {c[2]}\n"
+        f"Nome: {nome_cidade}\n"
         f"População: {c[3]}\n"
         f"PIB: {c[4]}\n"
         f"Área: {c[5]}\n"
         f"Pontos Turísticos: {c[6]}\n"
         f"Densidade Populacional: {c[7]}\n"
         f"PIB per Capita: {c[8]}\n\n"
+        f"Bandeira: {BANDEIRAS_ESTADOS.get(estado_sigla, 'Não disponível')}"
     )
     
     detalhes_win = tk.Toplevel(root)
-    detalhes_win.title(f"Detalhes da Cidade: {c[2]}")
+    detalhes_win.title(f"Detalhes: {nome_cidade}")
     detalhes_win.geometry("650x600")
     detalhes_win.resizable(False, False)
     
     main_frame = tk.Frame(detalhes_win, padx=20, pady=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
     
-    tk.Label(main_frame, text=f"Detalhes de {c[2]}", 
+    tk.Label(main_frame, text=f"Detalhes de {nome_cidade}", 
              font=("Fira Code", 16, "bold")).pack(pady=(0,15))
     
     texto_frame = tk.Frame(main_frame)
-    texto_frame.pack(fill=tk.BOTH)
+    texto_frame.pack(fill=tk.BOTH, expand=True)
     
     scrollbar = ttk.Scrollbar(texto_frame)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     
     texto = tk.Text(texto_frame, wrap=tk.WORD, font=("Fira Code", 12), 
                    width=60, height=10, yscrollcommand=scrollbar.set)
-    texto.pack(side=tk.LEFT, fill=tk.BOTH)
+    texto.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar.config(command=texto.yview)
     
     texto.insert(tk.END, detalhes)
     texto.config(state=tk.DISABLED)
     
-    # Frame para a bandeira
-    bandeira_frame = tk.Frame(main_frame, pady=15, bd=2, relief=tk.GROOVE)
-    bandeira_frame.pack(fill=tk.BOTH, expand=True)
-    
-    tk.Label(bandeira_frame, text="Bandeira do Estado:", 
-             font=("Fira Code", 12, "bold")).pack(pady=5)
-    
-    # Exibição da bandeira ou descrição
-    descricao = BANDEIRAS_ESTADOS.get(estado_sigla, "Bandeira não disponível")
+    # Seção da bandeira
+    bandeira_frame = tk.Frame(main_frame, pady=15)
+    bandeira_frame.pack(fill=tk.BOTH)
     
     if PILLOW_AVAILABLE:
         try:
@@ -139,17 +134,21 @@ def exibir_detalhes():
                 img = img.resize((200, 120), Image.LANCZOS)
                 photo = ImageTk.PhotoImage(img)
                 
+                tk.Label(bandeira_frame, text="Bandeira:", font=("Fira Code", 12, "bold")).pack()
+                
                 img_label = tk.Label(bandeira_frame, image=photo)
                 img_label.image = photo
                 img_label.pack()
             else:
                 raise FileNotFoundError
-        except Exception:
-            tk.Label(bandeira_frame, text=descricao, font=("Fira Code", 10),
-                    fg="gray", wraplength=400).pack()
+        except Exception as e:
+            tk.Label(bandeira_frame, 
+                    text=f"Não foi possível carregar a bandeira: {BANDEIRAS_ESTADOS.get(estado_sigla, 'Bandeira não disponível')}",
+                    font=("Fira Code", 10), fg="gray").pack()
     else:
-        tk.Label(bandeira_frame, text=descricao, font=("Fira Code", 10),
-                fg="blue", wraplength=400).pack()
+        tk.Label(bandeira_frame, 
+                text=BANDEIRAS_ESTADOS.get(estado_sigla, "Bandeira não disponível"),
+                font=("Fira Code", 10), fg="blue").pack()
     
     btn_frame = tk.Frame(main_frame)
     btn_frame.pack(pady=(15,0))
@@ -238,7 +237,7 @@ def inserir_capitais_brasil():
         ["RJ", "3304557", "Rio de Janeiro", "6500000", "359634752", "12", "8", "541666.67", "55.33"],
         ["RN", "2408102", "Natal", "890000", "24186261", "26", "5", "34230.77", "27.19"],
         ["RO", "1100205", "Porto Velho", "550000", "20059521", "1", "4", "550000.00", "36.47"],
-        ["RR", "1400100", "Boa Vista", "430000", "13493364", "7", "4", "61428.57", "31.38"],
+        ["RR", "1400100", "Bandeira das Bandeiras", "430000", "13493364", "7", "4", "61428.57", "31.38"],
         ["RS", "4314902", "Porto Alegre", "1500000", "81562848", "19", "6", "78947.37", "54.38"],
         ["SC", "4205407", "Florianópolis", "540000", "23555034", "16", "5", "33750.00", "43.62"],
         ["SE", "2800308", "Aracaju", "680000", "18405677", "25", "4", "27200.00", "27.07"],
@@ -254,7 +253,7 @@ def inserir_capitais_brasil():
 
 # Configuração da janela principal
 root = tk.Tk()
-root.title("Super Trunfo - Cidades")
+root.title("Super Trunfo - Cidades Brasileiras")
 root.geometry("1000x650")
 root.resizable(False, False)
 
@@ -279,12 +278,12 @@ btn_config = {
     'highlightthickness': 0
 }
 
-# Botões com texto completo
+# Botões com ícones e descrição
 btn_detalhes = tk.Button(btn_frame, text="🔍 Ver Detalhes", command=exibir_detalhes, **btn_config)
-btn_adicionar = tk.Button(btn_frame, text="➕ Adicionar Cidade", command=adicionar_cidade, **btn_config)
-btn_remover = tk.Button(btn_frame, text="🗑️ Remover Cidade", command=remover_cidade, **btn_config)
-btn_atualizar = tk.Button(btn_frame, text="🔄 Atualizar Lista", command=atualizar_lista, **btn_config)
-btn_capitais = tk.Button(btn_frame, text="🏙️ Inserir Capitais", command=inserir_capitais_brasil, **btn_config)
+btn_adicionar = tk.Button(btn_frame, text="➕ Adicionar", command=adicionar_cidade, **btn_config)
+btn_remover = tk.Button(btn_frame, text="🗑️ Remover", command=remover_cidade, **btn_config)
+btn_atualizar = tk.Button(btn_frame, text="🔄 Atualizar", command=atualizar_lista, **btn_config)
+btn_capitais = tk.Button(btn_frame, text="🏙️ Capitais", command=inserir_capitais_brasil, **btn_config)
 
 # Posicionamento dos botões
 btn_detalhes.grid(row=0, column=0, padx=5, sticky="ew")
@@ -332,6 +331,10 @@ scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
 tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+# Cores alternadas para linhas
+tree.tag_configure('oddrow', background='#f0f0f0')
+tree.tag_configure('evenrow', background='#ffffff')
+
 # Carregar dados iniciais
 atualizar_lista()
 
@@ -339,8 +342,3 @@ atualizar_lista()
 root.eval('tk::PlaceWindow . center')
 
 root.mainloop()
-[Running] python -u "c:\Users\Lucas\programas da faculdade\programas-da-faculdade\Programa 1 - jogo de cartas em C\SupertrunfoTeste2\output\supertrunfo_gui.py"
-Aviso: Pillow n�o est� instalado. As bandeiras ser�o exibidas como texto.
-
-[Done] exited with code=0 in 9.575 seconds
-# File: programas-da-faculdade/Programa%201%20-%20jogo%20de%20cartas%20em%20C/SupertrunfoTeste2/output/supertrunfo_gui.py
