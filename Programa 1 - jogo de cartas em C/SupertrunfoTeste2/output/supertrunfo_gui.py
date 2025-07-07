@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 from tkinter import ttk
-from PIL import Image, ImageTk
 import os
 
 ARQUIVO = "supertrunfoteste2.txt"
@@ -36,6 +35,14 @@ BANDEIRAS_ESTADOS = {
     "SP": "Bandeira de São Paulo - listras pretas, brancas e vermelhas com brasão",
     "TO": "Bandeira do Tocantins - fundo branco com faixa laranja e estrela"
 }
+
+# Verifica se o Pillow está instalado
+try:
+    from PIL import Image, ImageTk
+    PILLOW_AVAILABLE = True
+except ImportError:
+    PILLOW_AVAILABLE = False
+    print("Aviso: Pillow não está instalado. As bandeiras serão exibidas como texto.")
 
 def ler_cidades():
     cidades = []
@@ -91,18 +98,15 @@ def exibir_detalhes():
     
     detalhes_win = tk.Toplevel(root)
     detalhes_win.title(f"Detalhes da Cidade: {c[2]}")
-    detalhes_win.geometry("650x600")  # Aumentei a altura para a bandeira
+    detalhes_win.geometry("650x600")
     detalhes_win.resizable(False, False)
     
-    # Frame principal
     main_frame = tk.Frame(detalhes_win, padx=20, pady=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
     
-    # Título
     tk.Label(main_frame, text=f"Detalhes de {c[2]}", 
              font=("Fira Code", 16, "bold")).pack(pady=(0,15))
     
-    # Frame para texto
     texto_frame = tk.Frame(main_frame)
     texto_frame.pack(fill=tk.BOTH)
     
@@ -121,43 +125,132 @@ def exibir_detalhes():
     bandeira_frame = tk.Frame(main_frame, pady=15, bd=2, relief=tk.GROOVE)
     bandeira_frame.pack(fill=tk.BOTH, expand=True)
     
-    # Título da bandeira
     tk.Label(bandeira_frame, text="Bandeira do Estado:", 
              font=("Fira Code", 12, "bold")).pack(pady=5)
     
-    try:
-        # Tenta carregar a imagem da bandeira (substitua pelo caminho real)
-        img_path = f"bandeiras/{estado_sigla}.png"  # Assumindo que temos as imagens em uma pasta 'bandeiras'
-        if os.path.exists(img_path):
-            img = Image.open(img_path)
-            img = img.resize((200, 120), Image.LANCZOS)
-            photo = ImageTk.PhotoImage(img)
-            
-            img_label = tk.Label(bandeira_frame, image=photo)
-            img_label.image = photo  # Manter referência
-            img_label.pack()
-        else:
-            # Exibe um placeholder se a imagem não existir
-            placeholder = tk.Label(
-                bandeira_frame, 
-                text=BANDEIRAS_ESTADOS.get(estado_sigla, "Bandeira não disponível"),
-                font=("Fira Code", 10),
-                fg="gray",
-                wraplength=400
-            )
-            placeholder.pack()
-            
-    except Exception as e:
-        messagebox.showerror("Erro", f"Não foi possível carregar a bandeira: {str(e)}", parent=detalhes_win)
+    # Exibição da bandeira ou descrição
+    descricao = BANDEIRAS_ESTADOS.get(estado_sigla, "Bandeira não disponível")
     
-    # Frame para o botão
+    if PILLOW_AVAILABLE:
+        try:
+            img_path = f"bandeiras/{estado_sigla}.png"
+            if os.path.exists(img_path):
+                img = Image.open(img_path)
+                img = img.resize((200, 120), Image.LANCZOS)
+                photo = ImageTk.PhotoImage(img)
+                
+                img_label = tk.Label(bandeira_frame, image=photo)
+                img_label.image = photo
+                img_label.pack()
+            else:
+                raise FileNotFoundError
+        except Exception:
+            tk.Label(bandeira_frame, text=descricao, font=("Fira Code", 10),
+                    fg="gray", wraplength=400).pack()
+    else:
+        tk.Label(bandeira_frame, text=descricao, font=("Fira Code", 10),
+                fg="blue", wraplength=400).pack()
+    
     btn_frame = tk.Frame(main_frame)
     btn_frame.pack(pady=(15,0))
     
     tk.Button(btn_frame, text="Fechar", command=detalhes_win.destroy,
              font=("Fira Code", 12), width=15).pack()
 
-# [...] (Manter as funções remover_cidade, adicionar_cidade e inserir_capitais_brasil anteriores)
+def remover_cidade():
+    selected_item = tree.selection()
+    if not selected_item:
+        messagebox.showwarning("Aviso", "Selecione uma cidade primeiro!", parent=root)
+        return
+    
+    resposta = messagebox.askyesno(
+        "Confirmação", 
+        "Deseja realmente remover esta cidade?",
+        parent=root
+    )
+    if not resposta:
+        return
+    
+    item_index = int(tree.item(selected_item[0], 'values')[0]) - 1
+    cidades = ler_cidades()
+    
+    if 0 <= item_index < len(cidades):
+        del cidades[item_index]
+        salvar_cidades(cidades)
+        atualizar_lista()
+        messagebox.showinfo("Sucesso", "Cidade removida com sucesso!", parent=root)
+
+def adicionar_cidade():
+    campos = [
+        ("Estado (ex: SP)", "Digite a sigla do estado (ex: SP):"),
+        ("Código IBGE", "Digite o código IBGE:"),
+        ("Nome da Cidade", "Digite o nome da cidade:"),
+        ("População", "Digite a população:"),
+        ("PIB", "Digite o PIB:"),
+        ("Área", "Digite a área:"),
+        ("Pontos Turísticos", "Digite o número de pontos turísticos:"),
+        ("Densidade Populacional", "Digite a densidade populacional:"),
+        ("PIB per Capita", "Digite o PIB per capita:")
+    ]
+    
+    nova = []
+    
+    for titulo, texto_label in campos:
+        valor = simpledialog.askstring(titulo, texto_label, parent=root)
+        if valor is None:  # Usuário cancelou
+            return
+        nova.append(valor)
+    
+    cidades = ler_cidades()
+    cidades.append(nova)
+    salvar_cidades(cidades)
+    atualizar_lista()
+    messagebox.showinfo("Sucesso", "Cidade adicionada com sucesso!", parent=root)
+
+def inserir_capitais_brasil():
+    resposta = messagebox.askyesno(
+        "Confirmação", 
+        "Isso irá adicionar todas as capitais brasileiras. Continuar?",
+        parent=root
+    )
+    if not resposta:
+        return
+    
+    dados = [
+        ["AC", "1200401", "Rio Branco", "419000", "10955674", "3", "5", "139666.67", "26.15"],
+        ["AL", "2704302", "Maceió", "1028000", "27484016", "18", "4", "57111.11", "26.73"],
+        ["AM", "1302603", "Manaus", "2200000", "103281436", "2", "6", "1100000.00", "46.94"],
+        ["AP", "1600303", "Macapá", "530000", "12938060", "6407", "3", "82.70", "24.43"],
+        ["BA", "2927408", "Salvador", "2900000", "62954487", "15", "7", "193333.33", "21.71"],
+        ["CE", "2304400", "Fortaleza", "2700000", "73436128", "22", "6", "122727.27", "27.20"],
+        ["DF", "5300108", "Brasília", "3000000", "286943782", "6", "8", "500000.00", "95.65"],
+        ["ES", "3205309", "Vitória", "365000", "31423572", "25", "4", "14600.00", "86.09"],
+        ["GO", "5208707", "Goiânia", "1500000", "59865989", "14", "5", "107142.86", "39.91"],
+        ["MA", "2111300", "São Luís", "1100000", "36535225", "17", "5", "64705.88", "33.21"],
+        ["MG", "3106200", "Belo Horizonte", "2600000", "105829675", "21", "6", "123809.52", "40.70"],
+        ["MS", "5002704", "Campo Grande", "914000", "34731151", "4", "4", "228500.00", "38.00"],
+        ["MT", "5103403", "Cuiabá", "622000", "29746934", "8", "4", "77750.00", "47.84"],
+        ["PA", "1501402", "Belém", "1500000", "33467126", "13", "6", "115384.62", "22.31"],
+        ["PB", "2507507", "João Pessoa", "833000", "22244284", "24", "5", "34708.33", "26.72"],
+        ["PE", "2611606", "Recife", "1700000", "54970305", "23", "6", "73913.04", "32.33"],
+        ["PI", "2211001", "Teresina", "870000", "23895231", "1673", "4", "520.13", "27.47"],
+        ["PR", "4106902", "Curitiba", "1900000", "98003703", "20", "6", "95000.00", "51.58"],
+        ["RJ", "3304557", "Rio de Janeiro", "6500000", "359634752", "12", "8", "541666.67", "55.33"],
+        ["RN", "2408102", "Natal", "890000", "24186261", "26", "5", "34230.77", "27.19"],
+        ["RO", "1100205", "Porto Velho", "550000", "20059521", "1", "4", "550000.00", "36.47"],
+        ["RR", "1400100", "Boa Vista", "430000", "13493364", "7", "4", "61428.57", "31.38"],
+        ["RS", "4314902", "Porto Alegre", "1500000", "81562848", "19", "6", "78947.37", "54.38"],
+        ["SC", "4205407", "Florianópolis", "540000", "23555034", "16", "5", "33750.00", "43.62"],
+        ["SE", "2800308", "Aracaju", "680000", "18405677", "25", "4", "27200.00", "27.07"],
+        ["SP", "3550308", "São Paulo", "12500000", "828980607", "10", "8", "1250000.00", "66.32"],
+        ["TO", "1721000", "Palmas", "310000", "10333418", "9", "4", "34444.44", "33.33"],
+    ]
+    
+    cidades = ler_cidades()
+    cidades.extend(dados)
+    salvar_cidades(cidades)
+    atualizar_lista()
+    messagebox.showinfo("Sucesso", "Capitais brasileiras adicionadas com sucesso!", parent=root)
 
 # Configuração da janela principal
 root = tk.Tk()
@@ -246,3 +339,8 @@ atualizar_lista()
 root.eval('tk::PlaceWindow . center')
 
 root.mainloop()
+[Running] python -u "c:\Users\Lucas\programas da faculdade\programas-da-faculdade\Programa 1 - jogo de cartas em C\SupertrunfoTeste2\output\supertrunfo_gui.py"
+Aviso: Pillow n�o est� instalado. As bandeiras ser�o exibidas como texto.
+
+[Done] exited with code=0 in 9.575 seconds
+# File: programas-da-faculdade/Programa%201%20-%20jogo%20de%20cartas%20em%20C/SupertrunfoTeste2/output/supertrunfo_gui.py
