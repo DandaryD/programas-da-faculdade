@@ -1,21 +1,22 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_CIDADES 100
+#define MAX_CIDADES 100 // Define o número máximo de cartas (cidades) que podem ser cadastradas
 
+// Estrutura que representa uma cidade/carta do jogo
 typedef struct {
-    char estado[3];
-    int codigo;
-    char nomeCidade[100];
-    long int populacao;
-    double pib;
-    double area;
-    int numPontosTuristicos;
-    double densidadePopulacional;
-    double pibPerCapita;
+    char estado[3]; // Sigla do estado (ex: SP, RJ)
+    int codigo; // Código IBGE da cidade
+    char nomeCidade[100]; // Nome da cidade
+    long int populacao; // População total
+    double pib; // Produto Interno Bruto da cidade
+    double area; // Área total da cidade em km²
+    int numPontosTuristicos; // Número de pontos turísticos
+    double densidadePopulacional; // População / Área
+    double pibPerCapita; // PIB / População
 } Cidade;
 
-// Exibe detalhes de uma cidade
+// Função que exibe os dados de uma carta (cidade)
 void exibirCarta(const Cidade *c, int indice) {
     printf("\n--- Detalhes da Carta %d ---\n", indice + 1);
     printf("Estado: %s\n", c->estado);
@@ -27,8 +28,10 @@ void exibirCarta(const Cidade *c, int indice) {
     printf("Pontos Turisticos: %d\n", c->numPontosTuristicos);
     printf("Densidade Populacional: %.2lf hab/km2\n", c->densidadePopulacional);
     printf("PIB per Capita: %.2lf\n", c->pibPerCapita);
+    // Essa função é essencial para o jogo, pois mostra os atributos da carta que serão comparados
 }
 
+// Permite ao jogador corrigir os dados de uma cidade cadastrada
 void corrigirCidade(Cidade *c) {
     int opcao;
     do {
@@ -37,7 +40,7 @@ void corrigirCidade(Cidade *c) {
         printf("5 - PIB\n6 - Area\n7 - Pontos Turisticos\n0 - Sair\n");
         printf("Escolha uma opcao: ");
         scanf("%d", &opcao);
-        while (getchar() != '\n');
+        while (getchar() != '\n'); // Limpa o buffer
 
         switch (opcao) {
             case 1:
@@ -51,7 +54,7 @@ void corrigirCidade(Cidade *c) {
             case 3:
                 printf("Digite o nome do municipio: ");
                 fgets(c->nomeCidade, sizeof(c->nomeCidade), stdin);
-                c->nomeCidade[strcspn(c->nomeCidade, "\n")] = 0;
+                c->nomeCidade[strcspn(c->nomeCidade, "\n")] = 0; // Remove o '\n'
                 break;
             case 4:
                 printf("Digite a populacao: ");
@@ -75,13 +78,14 @@ void corrigirCidade(Cidade *c) {
                 printf("Opcao invalida!\n");
         }
 
-        // Atualiza campos derivados
+        // Recalcula atributos derivados, importantes para o jogo
         c->densidadePopulacional = (c->area > 0) ? (double)c->populacao / c->area : 0.0;
         c->pibPerCapita = (c->populacao > 0) ? c->pib / (double)c->populacao : 0.0;
 
     } while (opcao != 0);
 }
 
+// Função para cadastrar uma nova cidade no baralho de cartas
 void cadastrarCidade(Cidade *c) {
     printf("\nCadastrando nova cidade:\n");
 
@@ -110,11 +114,11 @@ void cadastrarCidade(Cidade *c) {
     scanf("%d", &c->numPontosTuristicos);
     while (getchar() != '\n');
 
-    // Atualiza campos derivados
+    // Calcula atributos derivados usados no jogo
     c->densidadePopulacional = (c->area > 0) ? (double)c->populacao / c->area : 0.0;
     c->pibPerCapita = (c->populacao > 0) ? c->pib / (double)c->populacao : 0.0;
 
-    // Permite correção
+    // Mostra dados e dá chance de corrigir antes de adicionar ao baralho
     char corrigir;
     do {
         exibirCarta(c, 0);
@@ -127,6 +131,7 @@ void cadastrarCidade(Cidade *c) {
     } while (corrigir == 's' || corrigir == 'S');
 }
 
+// Mostra todas as cidades cadastradas no baralho
 void exibirTodasCidades(const Cidade cidades[], int total) {
     if (total == 0) {
         printf("\nNenhuma cidade cadastrada ainda.\n");
@@ -135,15 +140,17 @@ void exibirTodasCidades(const Cidade cidades[], int total) {
     for (int i = 0; i < total; i++) {
         exibirCarta(&cidades[i], i);
     }
+    // Importante para que o jogador visualize todas as cartas disponíveis
 }
 
+// Remove uma carta (cidade) com base na escolha do jogador
 void removerCidade(Cidade cidades[], int *total) {
     if (*total == 0) {
         printf("\nNenhuma cidade cadastrada para remover.\n");
         return;
     }
 
-    exibirTodasCidades(cidades, *total);
+    exibirTodasCidades(cidades, *total); // Mostra as cartas antes de escolher
 
     int indice;
     printf("\nDigite o numero da carta a remover (1 a %d): ", *total);
@@ -153,20 +160,23 @@ void removerCidade(Cidade cidades[], int *total) {
         return;
     }
 
+    // Move todas as cartas uma posição para trás após remover
     for (int i = indice - 1; i < *total - 1; i++) {
         cidades[i] = cidades[i + 1];
     }
-    (*total)--;
+    (*total)--; // Decrementa o número de cartas
     printf("Cidade removida com sucesso!\n");
 }
 
+// Função principal do programa (menu do jogo)
 int main() {
-    Cidade cidades[MAX_CIDADES];
-    int total = 0;
+    Cidade cidades[MAX_CIDADES]; // Vetor de cartas
+    int total = 0; // Contador de cidades cadastradas
     int opcao;
 
     printf("--- Cadastro de Cartas Super Trunfo (Cidades) ---\n");
 
+    // Loop principal do programa
     do {
         printf("\nMenu Principal:\n");
         printf("1 - Cadastrar nova cidade\n");
@@ -175,7 +185,7 @@ int main() {
         printf("0 - Sair\n");
         printf("Escolha uma opcao: ");
         scanf("%d", &opcao);
-        while (getchar() != '\n');
+        while (getchar() != '\n'); // Limpa o buffer
 
         switch (opcao) {
             case 1:
@@ -199,7 +209,7 @@ int main() {
                 printf("Opcao invalida!\n");
         }
 
-    } while (opcao != 0);
+    } while (opcao != 0); // Continua até o jogador decidir sair
 
     return 0;
 }
